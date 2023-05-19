@@ -8,7 +8,7 @@ function updateViewDrawPage() {
                     <td>
                     </td>
                   </tr>`;
-    for (let person of model.inputs.drawPage.list) {
+    for (let person of model.participants) {
       html += `<tr>
                   <td><input type="checkbox"
                              onclick="togglePersonSelected(${person.id})" 

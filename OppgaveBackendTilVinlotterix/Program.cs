@@ -29,6 +29,30 @@ app.MapGet("/participants", async () =>
     return contacts;
 });
 
+app.MapPost("/participants", async (Participant participant) =>
+{
+    var conn = new SqlConnection(connStr);
+    var insertSql = @"
+        INSERT INTO participant (Id, Name)
+        VALUES (@Id, @Name)
+    ";
+
+    await conn.ExecuteAsync(insertSql, participant);
+    return participant;
+});
+
+app.MapDelete("/participants/{Id}", async (Guid Id) =>
+{
+    var conn = new SqlConnection(connStr);
+    var sql = @"
+        DELETE FROM participant
+        WHERE Id = @Id
+    ";
+
+    var affectedRows = await conn.ExecuteAsync(sql);
+    return affectedRows == 0 ? Results.NotFound() : Results.Ok();
+});
+
 app.MapGet("/draws", async () =>
 {
     var conn = new SqlConnection(connStr);
@@ -109,8 +133,10 @@ app.MapPost("/draws", async (DrawQuery drawQuery) =>
     ";
 
     conn.Execute(drawSql, draw);
-    await conn.ExecuteAsync(drawWinnerSql, winners);
-    await conn.ExecuteAsync(drawParticipantSql, participants);
+    conn.Execute(drawWinnerSql, winners);
+    conn.Execute(drawParticipantSql, participants);
+
+    return GetDrawObject(draw.Id);
 });
 
 app.Run();

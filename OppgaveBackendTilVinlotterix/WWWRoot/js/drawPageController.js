@@ -27,7 +27,7 @@ function selectAllOrNone(selectAll) {
   
   function draw() {
     let count = model.inputs.drawPage.drawCount;
-    const selectedPeople = model.inputs.drawPage.list.filter(p => p.isSelected);
+    const selectedPeople = model.participants.filter(p => p.isSelected);
     const indexes = Array.from(selectedPeople.keys());
     const winners = [];
     while (count-- > 0 && indexes.length > 0) {
@@ -50,6 +50,6 @@ function selectAllOrNone(selectAll) {
     updateView();
   }
   
-  function findPerson(id) {
-    return model.inputs.drawPage.list.find(p => p.id === id);
+function findPerson(id) {
+    return model.participants.find(p => p.id === id);
   }

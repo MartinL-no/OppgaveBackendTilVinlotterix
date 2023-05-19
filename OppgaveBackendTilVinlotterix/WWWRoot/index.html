@@ -4,6 +4,9 @@
 
 <head>
     <link rel="stylesheet" href="css/vinlotterix.css" />
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="js/api.js"></script>
+
     <script src="js/model.js"></script>
     <script src="js/common.js"></script>
     <script src="js/drawPageController.js"></script>
@@ -15,13 +18,20 @@
     <div id="app">
 
     </div>
-    <script>
+<script>
+    init()
+
+    async function init() {
+        model.draws = await getDraws();
+        model.participants = await getParticipants();
         updateView();
-        function updateView() {
-            if (model.app.currentPage === 'draw') updateViewDrawPage();
-            else if (model.app.currentPage === 'winners') updateViewWinnersPage();
-        }
-    </script>
+    }
+    function updateView() {
+        if (model.app.currentPage === 'draw') updateViewDrawPage();
+        else if (model.app.currentPage === 'winners') updateViewWinnersPage();
+    }
+
+</script>
 </body>
 
 </html>

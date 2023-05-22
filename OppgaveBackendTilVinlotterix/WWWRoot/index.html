@@ -2,36 +2,35 @@
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 
-<head>
-    <link rel="stylesheet" href="css/vinlotterix.css" />
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="js/api.js"></script>
+    <head>
+        <link rel="stylesheet" href="css/vinlotterix.css" />
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+        <script src="js/api.js"></script>
 
-    <script src="js/model.js"></script>
-    <script src="js/common.js"></script>
-    <script src="js/drawPageController.js"></script>
-    <script src="js/drawPageView.js"></script>
-    <script src="js/winnersPageView.js"></script>
-</head>
+        <script src="js/model.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/drawPageController.js"></script>
+        <script src="js/drawPageView.js"></script>
+        <script src="js/winnersPageView.js"></script>
+    </head>
 
-<body>
-    <div id="app">
+    <body>
+        <div id="app">
 
-    </div>
-<script>
-    init()
-
-    async function init() {
-        model.draws = await getDraws();
-        model.participants = await getParticipants();
-        updateView();
-    }
-    function updateView() {
-        if (model.app.currentPage === 'draw') updateViewDrawPage();
-        else if (model.app.currentPage === 'winners') updateViewWinnersPage();
-    }
-
-</script>
-</body>
+        </div>
+    <script>
+            async function init() {
+                model.draws = await getDraws();
+                const participants = await getParticipants();
+                model.participants = participants.map(p => ({ ...p, isSelected: false }));
+                updateView();
+            }
+            function updateView() {
+                if (model.app.currentPage === 'draw') updateViewDrawPage();
+                else if (model.app.currentPage === 'winners') updateViewWinnersPage();
+            }
+            init()
+        </script>
+    </body>
 
 </html>

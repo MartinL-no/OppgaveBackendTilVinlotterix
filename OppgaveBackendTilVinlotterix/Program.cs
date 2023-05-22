@@ -1,10 +1,7 @@
 using Dapper;
-using System;
 using System.Data.SqlClient;
 using OppgaveBackendTilVinlotterix.Model;
 using OppgaveBackendTilVinlotterix.QueryModel;
-using static System.Net.Mime.MediaTypeNames;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
@@ -32,16 +29,16 @@ app.MapGet("/participants", async () =>
 app.MapPost("/participants", async (Participant participant) =>
 {
     var conn = new SqlConnection(connStr);
-    var insertSql = @"
+    var sql = @"
         INSERT INTO participant (Id, Name)
         VALUES (@Id, @Name)
     ";
 
-    await conn.ExecuteAsync(insertSql, participant);
+    await conn.ExecuteAsync(sql, participant);
     return participant;
 });
 
-app.MapDelete("/participants/{Id}", async (Guid Id) =>
+app.MapDelete("/participants/{Id}", async (Guid id) =>
 {
     var conn = new SqlConnection(connStr);
     var sql = @"
@@ -49,7 +46,7 @@ app.MapDelete("/participants/{Id}", async (Guid Id) =>
         WHERE Id = @Id
     ";
 
-    var affectedRows = await conn.ExecuteAsync(sql);
+    var affectedRows = await conn.ExecuteAsync(sql, new { Id = id });
     return affectedRows == 0 ? Results.NotFound() : Results.Ok();
 });
 
@@ -100,21 +97,23 @@ app.MapGet("/draws", async () =>
     return draws;
 });
 
-app.MapPost("/draws", async (DrawQuery drawQuery) =>
+app.MapPost("/draws/{winnersCount}", async (int winnersCount, List<Participant> participants) =>
 {
     var conn = new SqlConnection(connStr);
     var draw = new Draw();
-    var winners = new List<DrawWinner>();
-    var participants = new List<DrawParticipant>();
+    var drawParticipants = new List<DrawParticipant>();
+    var drawWinners = new List<DrawWinner>();
+    var random = new Random();
 
-    foreach (var winner in drawQuery.Winners)
+    foreach (var participant in participants)
     {
-        winners.Add(new DrawWinner(winner.Id, draw.Id));
+        drawParticipants.Add(new DrawParticipant(draw.Id, participant.Id));
     }
 
-    foreach (var participant in drawQuery.Participants)
+    for (int i = 0; i < Convert.ToInt32(winnersCount); i++)
     {
-        participants.Add(new DrawParticipant(participant.Id, draw.Id));
+        var index = random.Next(participants.Count);
+        drawWinners.Add(new DrawWinner(draw.Id, participants[index].Id));
     }
 
     var drawSql = @"
@@ -123,27 +122,28 @@ app.MapPost("/draws", async (DrawQuery drawQuery) =>
     ";
 
     var drawParticipantSql = @"
-        INSERT INTO drawParticipant (Id, DrawId, DrawParticipant)
-        VALUES (@Id, @DrawId, @DrawParticipant)
+        INSERT INTO drawParticipant (Id, DrawId, ParticipantId)
+        VALUES (@Id, @DrawId, @ParticipantId)
     ";
 
     var drawWinnerSql = @"
-        INSERT INTO drawWinner (Id, DrawId, DrawWinner)
-        VALUES (@Id, @DrawId, @DrawWinner)
+        INSERT INTO drawWinner (Id, DrawId, ParticipantId)
+        VALUES (@Id, @DrawId, @ParticipantId)
     ";
 
     conn.Execute(drawSql, draw);
-    conn.Execute(drawWinnerSql, winners);
-    conn.Execute(drawParticipantSql, participants);
+    conn.Execute(drawParticipantSql, drawParticipants);
+    conn.Execute(drawWinnerSql, drawWinners);
 
     return GetDrawObject(draw.Id);
 });
 
 app.Run();
 
-DrawQuery GetDrawObject(Guid Id)
+DrawQuery GetDrawObject(Guid id)
 {
     var conn = new SqlConnection(connStr);
+    var participantDictionary = new Dictionary<Guid, DrawQuery>();
 
     var sql = @"
         SELECT d.Id, d.Time,
@@ -157,19 +157,18 @@ DrawQuery GetDrawObject(Guid Id)
         WHERE d.Id = @Id
     ";
 
-    var isDrawQueryUninitialized = true;
     var draws = conn.Query<DrawQuery, Participant, Participant, DrawQuery>(
             sql,
             (draw, winner, participant) =>
             {
-                DrawQuery? drawQuery = null;
+                DrawQuery? drawQuery;
  
-                if (isDrawQueryUninitialized)
+                if (!participantDictionary.TryGetValue(draw.Id, out drawQuery))
                 {
                     drawQuery = draw;
                     drawQuery.Winners = new List<Participant>();
                     drawQuery.Participants = new List<Participant>();
-                    isDrawQueryUninitialized = false;
+                    participantDictionary.Add(draw.Id, drawQuery);
                 }
                 if (winner != null && !drawQuery.Winners.Any(w => w.Id == winner.Id))
                 {
@@ -181,7 +180,7 @@ DrawQuery GetDrawObject(Guid Id)
                 }
  
                 return drawQuery;
-            }, splitOn: "Id")
+            }, param: new { Id = id } , splitOn: "Id")
         .Distinct()
         .ToList();
 

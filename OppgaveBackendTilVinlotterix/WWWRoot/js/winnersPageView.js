@@ -4,8 +4,8 @@ function updateViewWinnersPage() {
     let cssClass = 'førsteTrekning';
     for (let draw of model.draws) {
         const time = new Date(draw.time);
-        console.log(time)
-        const dateText = getDateStringForDisplay(time);
+        const dateText = getDateStringForDisplay(time).toString();
+        console.log(dateText)
         const dayName = dayNames[time.getDay()];
         const winners = draw.winners.map(w => w.name);
         const participants = draw.participants.map(p => p.name);

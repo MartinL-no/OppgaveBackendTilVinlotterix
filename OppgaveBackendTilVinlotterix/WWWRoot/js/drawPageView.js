@@ -11,10 +11,10 @@ function updateViewDrawPage() {
     for (let person of model.participants) {
       html += `<tr>
                   <td><input type="checkbox"
-                             onclick="togglePersonSelected(${person.id})" 
+                             onclick='togglePersonSelected("${person.id}")' 
                              ${getChecked(person.isSelected)}"/></td>
                   <td>${person.name}</td>
-                  <td><button class="litenKnapp"  onclick="deletePerson(${person.id})">x</button></td>
+                  <td><button class="litenKnapp"  onclick='deletePerson("${person.id}")'>x</button></td>
                 </tr>`;
     }
     html += `<tr>

@@ -1,5 +1,5 @@
 ﻿function getDateStringForDisplay(dato) {
-  return dato.toLocaleString().replace(',', '').substr(0, 15);
+  return dato.toLocaleString().replace(',', '').substr(0, 16);
 }
 
 function getDateStringForStorage(dato) {

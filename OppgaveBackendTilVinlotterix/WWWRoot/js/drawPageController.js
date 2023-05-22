@@ -1,55 +1,51 @@
 function selectAllOrNone(selectAll) {
     model.inputs.drawPage.selectAll = selectAll;
-    for (let person of model.inputs.drawPage.list) {
+    for (let person of model.participants) {
       person.isSelected = selectAll;
     }
     updateView();
   }
   
-  function addPerson() {
-    const name = model.inputs.drawPage.newPersonName;
-    const maxId = model.inputs.drawPage.list.map(p => p.id).reduce((max, value) => Math.max(max, value), -1);
-    model.inputs.drawPage.list.push(
-      { id: maxId+1, name: name, isSelected: true });
+async function addPerson() {
+    const requestObject = {
+      name: model.inputs.drawPage.newPersonName
+    }
+    const person = await createParticipant(requestObject);
+    model.participants.push({ ...person, isSelected: true });
     updateView();
-  }
+ }
   
-  function togglePersonSelected(id) {
+function togglePersonSelected(id) {
     const person = findPerson(id);
     person.isSelected = !person.isSelected;
     updateView();
-  }
+}
   
-  function deletePerson(id) {
-    model.inputs.drawPage.list = model.inputs.drawPage.list.filter(p => p.id !== id);
-    updateView();
-  }
-  
-  function draw() {
-    let count = model.inputs.drawPage.drawCount;
-    const selectedPeople = model.participants.filter(p => p.isSelected);
-    const indexes = Array.from(selectedPeople.keys());
-    const winners = [];
-    while (count-- > 0 && indexes.length > 0) {
-      const randomIndex = Math.floor(Math.random() * indexes.length);
-      const index = indexes.splice(randomIndex, 1);
-      winners.push(selectedPeople[index].name);
+async function deletePerson(id) {
+    const response = await axios.delete(`/participants/${id}`);
+    if (response.status == 200) {
+        model.participants = model.participants.filter(p => p.id !== id);
+        updateView();
     }
-    model.draws.unshift({
-      winners: winners,
-      time: getNowForStorage(),
-      participants: selectedPeople.map(p => p.name)
-    });
+}
+  
+async function draw() {
+    let count = model.inputs.drawPage.drawCount;
+    const selectedPeople = model.participants
+        .filter(p => p.isSelected)
+        .map(p => ({ id: p.id, name: p.name }));
+    const draw = await createDraw(count, selectedPeople)
+    model.draws.unshift(draw);
     model.app.currentPage = 'winners';
     updateView();
-  }
+}
   
-  function changeDrawCount(delta) {
-    model.inputs.drawPage.drawCount =
-      Math.max(1, model.inputs.drawPage.drawCount + delta);
-    updateView();
-  }
+function changeDrawCount(delta) {
+model.inputs.drawPage.drawCount =
+    Math.max(1, model.inputs.drawPage.drawCount + delta);
+updateView();
+}
   
 function findPerson(id) {
     return model.participants.find(p => p.id === id);
-  }
+}
